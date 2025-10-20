@@ -1,7 +1,7 @@
-# 🏪 Store Management System (IEP Project 2025)
+# 🏪 Store Management System
 
 This project implements a **multi-user store management system** using **Python**, **Flask**, **SQLAlchemy**, **Docker**, and **Ethereum smart contracts** (via **Ganache**).  
-It was developed as part of the **IEP 2025 project** and demonstrates containerized microservices for user management, store operations, and blockchain-based payment handling.
+It demonstrates containerized microservices for user management, store operations, and blockchain-based payment handling.
 
 ---
 
