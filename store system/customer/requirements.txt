@@ -1,0 +1,6 @@
+flask
+flask_sqlalchemy
+PyJWT
+mysql-connector-python
+py-solc-x
+web3

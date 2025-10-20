@@ -1,0 +1,39 @@
+CREATE DATABASE IF NOT EXISTS store;
+
+USE store;
+
+CREATE TABLE IF NOT EXISTS Category (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(256) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS Product (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(256) NOT NULL UNIQUE,
+    price DECIMAL(10,2) NOT NULL CHECK (price > 0)
+);
+
+CREATE TABLE IF NOT EXISTS ProductCategory (
+    product_id INT NOT NULL,
+    category_id INT NOT NULL,
+    PRIMARY KEY (product_id, category_id),
+    FOREIGN KEY (product_id) REFERENCES Product(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES Category(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS `Order` (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(256) NOT NULL,
+    status ENUM('CREATED', 'PENDING', 'COMPLETE') NOT NULL DEFAULT 'CREATED',
+    timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    address VARCHAR(256) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS OrderProduct (
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    PRIMARY KEY (order_id, product_id),
+    FOREIGN KEY (order_id) REFERENCES `Order`(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES Product(id) ON DELETE CASCADE
+);

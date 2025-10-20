@@ -1,0 +1,152 @@
+version: "3.9"
+
+services:
+  # === USERS SYSTEM ===
+  mysql_users:
+    image: mysql:8.0
+    container_name: mysql_users
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: users
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    volumes:
+      - mysql_users_data:/var/lib/mysql
+      - ./user system/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - users_network
+
+  api_users:
+    build: ./user system
+    container_name: api_users
+    depends_on:
+      - mysql_users
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: mysql_users
+      DB_PORT: 3306
+      DB_USER: user
+      DB_PASSWORD: userpassword
+      DB_NAME: users
+      JWT: JWT_SECRET_DEV_KEY
+    command: ["python", "api.py"]
+    networks:
+      - users_network
+
+  # === STORE SYSTEM ===
+  mysql_store:
+    image: mysql:8.0
+    container_name: mysql_store
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: store
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    volumes:
+      - mysql_store_data:/var/lib/mysql
+      - ./store system/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - store_network
+
+  ganache:
+    image: trufflesuite/ganache-cli:next
+    container_name: ganache
+    ports:
+      - "8545:8545"
+    command:
+      - "--account=0x6ae4bc3e8cbe9f1d57d63ce3319c565c24a55f1a61db520e6c1a3ad4361be3d0,100000000000000000000"
+      - "--account=0x98f6ff5e8469c0021082b97cbb38974c7c5d39930e4f18c742c8f5a934a3ceb8,100000000000000000000"
+      - "--account=0x78983a362d7580ab9b5e7fb4eb11232357bb446a05c8eb27b256c94985da7494,100000000000000000000"
+      - "--account=0x0d05552280f09dc6a4c7ca94117e5c599b5a20792e5206d4939a8c63c7ea9cd8,100000000000000000000"
+      - "--account=0x22173f96e8690a6745c846686d8c8910ac0fde73e33a36409d4645c98c2bc6bb,100000000000000000000"
+      - "--account=0x5abf1fa76f89127a039474253275eaa00b8f8846114457abc6923504c19f6240,100000000000000000000"
+      - "--account=0x8790759d9eb6fc14d61f6a23724e4596ddf53db0b6b52b8bcd8e2dfd11ca0c72,100000000000000000000"
+      - "--account=0x61a672dfc14d5c28cb62731ed7dbd983cdbd189403a482c2a88abc11e85f5921,100000000000000000000"
+      - "--account=0xf186149e76ef2c9c5eb1f3e1fe8613cc9d1ca50fa317bf42edf32352f18ac083,100000000000000000000"
+      - "--account=0x98165bee4cca54d22e1bc901ffa8c04518b68da8669b58928249ac25bd63e21e,100000000000000000000"
+      - "--account=0xb64be88dd6b89facf295f4fd0dda082efcbe95a2bb4478f5ee582b7efe88cf60,0"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8545/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - store_network
+
+  owner_api:
+    build: ./store system/owner
+    container_name: owner_api
+    depends_on:
+      - mysql_store
+      - ganache
+    ports:
+      - "5001:5001"
+    environment:
+      DB_HOST: mysql_store
+      DB_PORT: 3306
+      DB_USER: user
+      DB_PASSWORD: userpassword
+      DB_NAME: store
+      JWT: JWT_SECRET_DEV_KEY
+    command: ["./initialize.sh"]
+    networks:
+      - store_network
+
+  customer_api:
+    build: ./store system/customer
+    container_name: customer_api
+    depends_on:
+      - mysql_store
+      - ganache
+    ports:
+      - "5002:5002"
+    environment:
+      DB_HOST: mysql_store
+      DB_PORT: 3306
+      DB_USER: user
+      DB_PASSWORD: userpassword
+      DB_NAME: store
+      JWT: JWT_SECRET_DEV_KEY
+    command: ["python", "customer_api.py"]
+    networks:
+      - store_network
+
+  courier_api:
+    build: ./store system/courier
+    container_name: courier_api
+    depends_on:
+      - mysql_store
+      - ganache
+    ports:
+      - "5003:5003"
+    environment:
+      DB_HOST: mysql_store
+      DB_PORT: 3306
+      DB_USER: user
+      DB_PASSWORD: userpassword
+      DB_NAME: store
+      JWT: JWT_SECRET_DEV_KEY
+    command: ["python", "courier_api.py"]
+    networks:
+      - store_network
+
+volumes:
+  mysql_users_data:
+  mysql_store_data:
+
+networks:
+  users_network:
+    driver: bridge
+  store_network:
+    driver: bridge
